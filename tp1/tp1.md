@@ -725,7 +725,34 @@ lost+found  testfile
 
 🌞 **Benchmarkz**
 
-- faites un test de vitesse d'écriture sur la partition `mdadm` montée en NFS : `/mnt/raid_storage`
-- faites un test de vitesse d'écriture sur la partition LVM montée en NFS : `/mnt/lvm_storage`
+```bash
+[root@git mnt]# dd if=/dev/zero of=/mnt/test_raid/testfilentfs bs=1G count=1 oflag=direct
+1+0 records in
+1+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 3.35611 s, 320 MB/s
+[root@git mnt]# dd if=/dev/zero of=/mnt/test_big/testfilentfs bs=1G count=1 oflag=direct
+dd: error writing '/mnt/test_big/testfilentfs': No space left on device
+1+0 records in
+0+0 records out
+937689088 bytes (938 MB, 894 MiB) copied, 6.0969 s, 154 MB/s
+#oups y a plus de place 
 
-> Là même avec l'environnement qui n'est pas idéal, la différence devrait être visible. Because réseau.
+
+[root@storage lvm_storage]# ls
+lost+found  testfile  testfilentfs
+[root@storage lvm_storage]# cd ..
+[root@storage mnt]# ls
+lvm_storage  raid_storage
+[root@storage mnt]# cd raid_storage/
+[root@storage raid_storage]# ls
+lost+found  testfilentfs
+[root@storage raid_storage]# df -h
+Filesystem                    Size  Used Avail Use% Mounted on
+devtmpfs                      4.0M     0  4.0M   0% /dev
+tmpfs                         385M     0  385M   0% /dev/shm
+tmpfs                         154M  3.1M  151M   3% /run
+/dev/mapper/rl-root           8.0G  1.6G  6.4G  20% /
+/dev/sda1                     960M  395M  566M  42% /boot
+/dev/md0                       15G  1.1G   13G   8% /mnt/raid_storage
+/dev/mapper/storage-big_data  2.0G  1.9G     0 100% /mnt/lvm_storage
+```
