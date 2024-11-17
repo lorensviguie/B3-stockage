@@ -678,18 +678,50 @@ C'est **un modèle de client/serveur** : on installe un serveur NFS sur une mach
 
 🌞 **Installer un serveur NFS**
 
-- il devra exposer les deux points de montage créés des parties précédentes : `/mnt/raid_storage` et `/mnt/lvm_storage`
-- seul le réseau local du serveur NFS doit pouvoir y accéder
-- il sera nécessaire de configurer le firewall de la machine
+```bash
+[root@storage lvm_storage]
+sudo chmod -R 755 /mnt/raid_storage
+sudo chmod -R 755 /mnt/lvm_storage
+[root@storage lvm_storage]# sudo nano /etc/exports
+[root@storage lvm_storage]# sudo systemctl enable --now nfs-server
+Created symlink /etc/systemd/system/multi-user.target.wants/nfs-server.service → /usr/lib/systemd/system/nfs-server.service.
+[root@storage lvm_storage]# sudo exportfs -rav
+exporting 192.168.10.0/24:/mnt/lvm_storage
+exporting 192.168.10.0/24:/mnt/raid_storage
+[root@storage lvm_storage]# sudo exportfs -v
+/mnt/raid_storage
+                192.168.10.0/24(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
+/mnt/lvm_storage
+                192.168.10.0/24(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
+[root@storage lvm_storage]# sudo firewall-cmd --permanent --zone=public --add-service=nfs
+sudo firewall-cmd --permanent --zone=public --add-service=rpc-bind
+sudo firewall-cmd --permanent --zone=public --add-service=mountd
+sudo firewall-cmd --reload
+success
+success
+success
+success
+[root@storage lvm_storage]# sudo firewall-cmd --zone=trusted --add-interface=ens18 --permanent
+sudo firewall-cmd --reload
+The interface is under control of NetworkManager, setting zone to 'trusted'.
+success
+success
+```
 
 🌞 **Pop une deuxième VM en vif**
 
-- installer un client NFS pour se connecter au serveur
-- pour `/mnt/raid_storage`
-  - monter le dossier partagé `/mnt/raid_storage` du serveur
-  - sur le point de montage que vous aurez créé sur le client `/mnt/raid_storage`
-  - (même chemin aussi sur le client)
-- et idem : partage `/mnt/lvm_storage` du serveur monté sur `/mnt/lvm_storage` côté client
+```bash
+[root@git test_raid]# sudo mount -t nfs 192.168.10.20:/mnt/lvm_storage /mnt/test_big/
+[root@git test_raid]# sudo mount -t nfs 192.168.10.20:/mnt/raid_storage /mnt/test_raid/
+[root@git test_raid]# ls
+lost+found
+[root@git test_raid]# cd ..
+[root@git mnt]# ls
+test_big  test_raid
+[root@git mnt]# cd test_big/
+[root@git test_big]# ls
+lost+found  testfile
+```
 
 🌞 **Benchmarkz**
 
